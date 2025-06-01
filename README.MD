@@ -4,7 +4,9 @@
 
 ⌨️ Controls
 ← / → – Rotate the ship
+
 ↑ – Thrust forward
+
 Space – Fire bullets
 💡 Features Smooth spaceship controls using keyboard input
 
