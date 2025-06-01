@@ -1,0 +1,30 @@
+ canvas {
+      background: black;
+      display: block;
+      margin: 0 auto;
+      border: 2px solid white;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
+      background: #000;
+    }
+    #scoreBoard {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    #gameOver {
+      display: none;
+      font-size: 30px;
+      color: red;
+      margin-top: 20px;
+    }
+    #restartBtn {
+      display: none;
+      font-size: 18px;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }

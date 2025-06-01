@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asteroid Game - Full Version</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="scoreBoard">Score: <span id="score">0</span></div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="gameOver">Game Over!</div>
+  <button id="restartBtn">Restart</button>
+
+   <!-- Audio files -->
+  <audio id="shootSound" src="shootmp3.wav"></audio>
+  <audio id="explodeSound" src="explosion-01.wav"></audio>
+
+  <script src="game.js"></script>
+</body>
+</html>
