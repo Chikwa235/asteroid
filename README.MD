@@ -23,4 +23,5 @@ Responsive layout — playable on both desktop and mobile
 CSS3
 
 Vanilla JavaScript (ES6)
+
 Live Demo: https://chikwa235.github.io/asteroid/
