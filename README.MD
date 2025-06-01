@@ -7,6 +7,7 @@ A classic space shooter game built entirely with HTML, CSS, and vanilla JavaScri
 Control a spaceship, dodge incoming asteroids, and shoot them down to survive and rack up points. The game gets faster and more challenging as time goes on!
 
 ⌨️ Controls
+
 ← / → – Rotate the ship
 
 ↑ – Thrust forward
