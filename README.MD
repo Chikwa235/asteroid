@@ -8,6 +8,7 @@
 ↑ – Thrust forward
 
 Space – Fire bullets
+
 💡 Features Smooth spaceship controls using keyboard input
 
 Dynamic asteroid spawning and movement
