@@ -1,190 +1,175 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let ship, bullets, asteroids, score, highScore, isGameOver, gameStarted = false;
+let gameRunning = false;
+let paused = false;
+let score = 0;
+let highScore = localStorage.getItem("highScore") || 0;
 
-const scoreDisplay = document.getElementById("score");
-const highScoreDisplay = document.getElementById("highScore");
-const gameOverDisplay = document.getElementById("gameOver");
-const restartBtn = document.getElementById("restartBtn");
-const startScreen = document.getElementById("startScreen");
-const startBtn = document.getElementById("startBtn");
+let stars = [];
+let asteroids = [];
+let keys = {};
+let spaceship;
 
-const shootSound = new Audio("shoot.mp3");
-const explodeSound = new Audio("explode.mp3");
+document.getElementById("startBtn").onclick = () => {
+  document.getElementById("titleScreen").style.display = "none";
+  gameRunning = true;
+  resetGame();
+};
 
-function init() {
-  ship = {
+document.getElementById("pauseBtn").onclick = () => {
+  paused = !paused;
+  document.getElementById("pauseBtn").innerText = paused ? "Resume" : "Pause";
+};
+
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+function resetGame() {
+  spaceship = {
     x: canvas.width / 2,
     y: canvas.height / 2,
+    radius: 20,
     angle: 0,
-    radius: 20
+    speed: 0,
+    rotationSpeed: 0.05
   };
-  bullets = [];
   asteroids = [];
   score = 0;
-  isGameOver = false;
-  gameStarted = true;
-
-  scoreDisplay.textContent = score;
-  highScore = parseInt(localStorage.getItem("highScore")) || 0;
-  highScoreDisplay.textContent = highScore;
-
-  for (let i = 0; i < 5; i++) {
-    asteroids.push(createAsteroidFarFromShip());
-  }
-
-  update();
+  stars = Array.from({ length: 100 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 2 + 1
+  }));
 }
 
-startBtn.addEventListener("click", () => {
-  startScreen.style.display = "none";
-  canvas.style.display = "block";
-  init();
-});
-
-restartBtn.addEventListener("click", () => {
-  location.reload();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (!gameStarted) return;
-
-  if (e.code === "Space") {
-    bullets.push({
-      x: ship.x,
-      y: ship.y,
-      dx: Math.cos(ship.angle) * 10,
-      dy: Math.sin(ship.angle) * 10
-    });
-    shootSound.currentTime = 0;
-    shootSound.play();
-  }
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (!gameStarted) return;
-  const dx = e.clientX - ship.x;
-  const dy = e.clientY - ship.y;
-  ship.angle = Math.atan2(dy, dx);
-});
-
-function createAsteroidFarFromShip(size = 40) {
-  let x, y, dx, dy;
-  do {
-    x = Math.random() * canvas.width;
-    y = Math.random() * canvas.height;
-  } while (Math.hypot(x - ship.x, y - ship.y) < 200);
-
-  dx = (Math.random() - 0.5) * 2;
-  dy = (Math.random() - 0.5) * 2;
-
-  return { x, y, dx, dy, size };
-}
-
-function drawShip() {
-  ctx.save();
-  ctx.translate(ship.x, ship.y);
-  ctx.rotate(ship.angle);
-  ctx.beginPath();
-  ctx.moveTo(20, 0);
-  ctx.lineTo(-20, 15);
-  ctx.lineTo(-20, -15);
-  ctx.closePath();
+function drawStars() {
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "white";
+  for (let s of stars) {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+    s.y += 0.5;
+    if (s.y > canvas.height) {
+      s.y = 0;
+      s.x = Math.random() * canvas.width;
+    }
+  }
+}
+
+function drawSpaceship() {
+  ctx.save();
+  ctx.translate(spaceship.x, spaceship.y);
+  ctx.rotate(spaceship.angle);
+  ctx.beginPath();
+  ctx.moveTo(0, -20);
+  ctx.lineTo(12, 10);
+  ctx.lineTo(-12, 10);
+  ctx.closePath();
+  ctx.fillStyle = "lime";
   ctx.fill();
   ctx.restore();
 }
 
-function drawBullets() {
-  ctx.fillStyle = "red";
-  bullets.forEach(b => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
-    ctx.fill();
-  });
+function updateSpaceship() {
+  if (keys["ArrowLeft"]) spaceship.angle -= spaceship.rotationSpeed;
+  if (keys["ArrowRight"]) spaceship.angle += spaceship.rotationSpeed;
+  if (keys["ArrowUp"]) {
+    spaceship.speed = 3;
+  } else {
+    spaceship.speed = 0;
+  }
+
+  spaceship.x += Math.cos(spaceship.angle) * spaceship.speed;
+  spaceship.y += Math.sin(spaceship.angle) * spaceship.speed;
+
+  // Screen wrap
+  if (spaceship.x < 0) spaceship.x = canvas.width;
+  if (spaceship.x > canvas.width) spaceship.x = 0;
+  if (spaceship.y < 0) spaceship.y = canvas.height;
+  if (spaceship.y > canvas.height) spaceship.y = 0;
+}
+
+function spawnAsteroids() {
+  if (asteroids.length < 5) {
+    const size = Math.random() * 20 + 20;
+    let angle = Math.random() * 2 * Math.PI;
+    let x = Math.random() < 0.5 ? 0 : canvas.width;
+    let y = Math.random() < 0.5 ? 0 : canvas.height;
+    asteroids.push({
+      x,
+      y,
+      radius: size,
+      dx: Math.cos(angle) * 2,
+      dy: Math.sin(angle) * 2
+    });
+  }
 }
 
 function drawAsteroids() {
-  ctx.fillStyle = "gray";
-  asteroids.forEach(a => {
+  for (let a of asteroids) {
     ctx.beginPath();
-    ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
-
-function createParticles(x, y, count = 10) {
-  for (let i = 0; i < count; i++) {
-    ctx.beginPath();
-    ctx.arc(x, y, Math.random() * 3 + 2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${Math.random()})`;
+    ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "gray";
     ctx.fill();
   }
 }
 
-function update() {
-  if (!gameStarted || isGameOver) return;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawShip();
-
-  bullets.forEach((b, i) => {
-    b.x += b.dx;
-    b.y += b.dy;
-    if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
-      bullets.splice(i, 1);
-    }
-  });
-
-  drawBullets();
-
-  for (let ai = asteroids.length - 1; ai >= 0; ai--) {
-    let a = asteroids[ai];
+function updateAsteroids() {
+  for (let a of asteroids) {
     a.x += a.dx;
     a.y += a.dy;
 
-    const distToShip = Math.hypot(ship.x - a.x, ship.y - a.y);
-    if (distToShip < ship.radius + a.size) {
-      isGameOver = true;
-      gameOverDisplay.style.display = "block";
-      restartBtn.style.display = "inline-block";
-      explodeSound.currentTime = 0;
-      explodeSound.play();
-      createParticles(ship.x, ship.y, 30);
+    if (a.x < 0) a.x = canvas.width;
+    if (a.x > canvas.width) a.x = 0;
+    if (a.y < 0) a.y = canvas.height;
+    if (a.y > canvas.height) a.y = 0;
 
-      if (score > highScore) {
-        localStorage.setItem("highScore", score);
-      }
-
-      return;
-    }
-
-    for (let bi = bullets.length - 1; bi >= 0; bi--) {
-      const b = bullets[bi];
-      const dist = Math.hypot(b.x - a.x, b.y - a.y);
-      if (dist < a.size) {
-        explodeSound.currentTime = 0;
-        explodeSound.play();
-        createParticles(a.x, a.y);
-        bullets.splice(bi, 1);
-        asteroids.splice(ai, 1);
-        score += 10;
-        scoreDisplay.textContent = score;
-
-        if (a.size > 20) {
-          asteroids.push(createAsteroidFarFromShip(a.size / 2));
-          asteroids.push(createAsteroidFarFromShip(a.size / 2));
-        }
-        break;
-      }
+    const dx = a.x - spaceship.x;
+    const dy = a.y - spaceship.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < a.radius + spaceship.radius) {
+      gameOver();
     }
   }
-
-  drawAsteroids();
-
-  requestAnimationFrame(update);
 }
+
+function gameOver() {
+  gameRunning = false;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+  }
+  alert(`Game Over! Score: ${score} | High Score: ${highScore}`);
+  document.getElementById("titleScreen").style.display = "block";
+  document.getElementById("pauseBtn").innerText = "Pause";
+}
+
+function drawScore() {
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText(`Score: ${score}`, 20, 30);
+  ctx.fillText(`High Score: ${highScore}`, 20, 60);
+}
+
+function gameLoop() {
+  if (!gameRunning) return;
+  if (!paused) {
+    drawStars();
+    updateSpaceship();
+    drawSpaceship();
+    spawnAsteroids();
+    updateAsteroids();
+    drawAsteroids();
+    drawScore();
+    score++;
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
